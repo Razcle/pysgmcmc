@@ -12,5 +12,3 @@ class NUTSSampler(MCMCSampler):
                  stepsize_schedule=ConstantStepsizeSchedule(0.01), seed=None,
                  session=tf.get_default_session(), dtype=tf.float64):
         pass
-
-
