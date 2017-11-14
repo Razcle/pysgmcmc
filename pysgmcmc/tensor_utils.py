@@ -14,6 +14,57 @@ __all__ = (
 )
 
 
+def choice(tensor: tf.Tensor, seed: int=None):
+    """ Return a random element from (non-empty) tensor `tensor`.
+
+    Parameters
+    ----------
+    tensor : tf.Tensor
+        Tensor from which we want to pick an element uniformly at random
+
+    Returns
+    -------
+    element : tf.Tensor
+        Element sampled uniformly at random from a given `tensor`.
+
+    seed : int or NoneType
+        Random seed to use during sampling.
+
+    Examples
+    ----------
+    Simple example:
+
+    >>> import tensorflow as tf
+    >>> tensor = tf.convert_to_tensor([1, 2, 3, 4])
+    >>> sample = choice(tensor, seed=1)
+    >>> session = tf.Session()
+    >>> sampled_value = session.run(sample)
+    >>> session.close()
+    >>> sampled_value
+    4
+
+    Simple multi-dimensional case:
+
+    >>> import tensorflow as tf
+    >>> tensor = tf.convert_to_tensor([[1, 2], [3, 4]])
+    >>> sample = choice(tensor, seed=1)
+    >>> session = tf.Session()
+    >>> sampled_value = session.run(sample)
+    >>> session.close()
+    >>> sampled_value
+    array([3, 4], dtype=int32)
+
+    """
+    if isinstance(tensor, (tf.Tensor, tf.Variable)):
+        tensor_value = tensor
+    else:
+        tensor_value = tf.convert_to_tensor(tensor)
+
+    n_elements, *_ = tensor_value.shape
+    index = tf.random_uniform((), maxval=n_elements, dtype=tf.int32, seed=seed)
+    return tensor_value[index]
+
+
 def vectorize(tensor):
     """ Turn any matrix into a long vector by expanding it.
         Tranforms `[[a, b], [c, d]]` into `[a, b, c, d]`.
