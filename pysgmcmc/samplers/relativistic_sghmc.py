@@ -1,7 +1,12 @@
 # vim:foldmethod=marker
+from typing import Callable, List, Dict, Iterator, Tuple
 import tensorflow as tf
+import numpy as np
 from pysgmcmc.samplers.base_classes import MCMCSampler
-from pysgmcmc.stepsize_schedules import ConstantStepsizeSchedule
+from pysgmcmc.custom_typing import TensorflowSession
+from pysgmcmc.stepsize_schedules import (
+    StepsizeSchedule, ConstantStepsizeSchedule
+)
 
 from pysgmcmc.tensor_utils import (
     vectorize, unvectorize
@@ -21,10 +26,14 @@ class RelativisticSGHMCSampler(MCMCSampler):
 
     """
 
-    def __init__(self, params, cost_fun, batch_generator=None,
-                 stepsize_schedule=ConstantStepsizeSchedule(0.001),
-                 mass=1.0, speed_of_light=1.0, D=1.0, Bhat=0.0,
-                 session=tf.get_default_session(), dtype=tf.float64, seed=None):
+    def __init__(self, params: List[tf.Variable],
+                 cost_fun: Callable[[List[tf.Variable]], tf.Tensor],
+                 batch_generator: Iterator[Dict[tf.placeholder, np.ndarray]]=None,
+                 stepsize_schedule: StepsizeSchedule=ConstantStepsizeSchedule(0.001),
+                 mass: float=1.0, speed_of_light: float=1.0,
+                 D: float=1.0, Bhat: float=0.0,
+                 session: TensorflowSession=tf.get_default_session(),
+                 dtype: tf.DType=tf.float64, seed: int=None) -> None:
         """ Initialize the sampler parameters and set up a tensorflow.Graph
             for later queries.
 
@@ -140,9 +149,9 @@ class RelativisticSGHMCSampler(MCMCSampler):
             )
 
 
-def _sample_relativistic_momentum(m, c, n_params,
-                                  bounds=(float("-inf"), float("inf")),
-                                  seed=None):
+def _sample_relativistic_momentum(m: float, c: float, n_params: int,
+                                  bounds: Tuple[float, float]=(float("-inf"), float("inf")),
+                                  seed: int=None):
     """
     Use adaptive rejection sampling (here: provided by external library `ARSpy`)
     to sample initial values for relativistic momentum `p`.
@@ -200,13 +209,12 @@ def _sample_relativistic_momentum(m, c, n_params,
              Available `here <https://github.com/MFreidank/pyars>`_.
 
     """
-    # XXX: Remove when more is supported, currently only floats for mass
-    # and c are.
+    # XXX: Remove when more is supported, currently only floats are
     assert isinstance(m, float)
     assert isinstance(c, float)
 
-    def generate_relativistic_logpdf(m, c):
-        def relativistic_log_pdf(p):
+    def generate_relativistic_logpdf(m: float, c: float):
+        def relativistic_log_pdf(p: float):
             """
             Logarithm of pdf of (multivariate) generalized
             hyperbolic distribution.

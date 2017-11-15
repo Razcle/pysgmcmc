@@ -1,11 +1,18 @@
 # vim: foldmethod=marker
+from typing import Callable, Dict, List, Iterator
 
 import tensorflow as tf
+import numpy as np
 from pysgmcmc.samplers.base_classes import BurnInMCMCSampler
-from pysgmcmc.stepsize_schedules import ConstantStepsizeSchedule
 
 from pysgmcmc.tensor_utils import (
     vectorize, unvectorize, safe_divide, safe_sqrt
+)
+
+from pysgmcmc.custom_typing import TensorflowSession
+
+from pysgmcmc.stepsize_schedules import (
+    ConstantStepsizeSchedule
 )
 
 
@@ -29,10 +36,13 @@ class SGLDSampler(BurnInMCMCSampler):
 
     """
 
-    def __init__(self, params, cost_fun, batch_generator=None,
+    def __init__(self, params: List[tf.Variable],
+                 cost_fun: Callable[[List[tf.Variable]], tf.Tensor],
+                 batch_generator: Iterator[Dict[tf.placeholder, np.ndarray]]=None,
                  stepsize_schedule=ConstantStepsizeSchedule(0.01),
-                 burn_in_steps=3000, A=1.0, scale_grad=1.0,
-                 session=tf.get_default_session(), dtype=tf.float64, seed=None):
+                 burn_in_steps: int=3000, A: float=1.0, scale_grad: float=1.0,
+                 session: TensorflowSession=tf.get_default_session(),
+                 dtype: tf.DType=tf.float64, seed: int=None) -> None:
         """ Initialize the sampler parameters and set up a tensorflow.Graph
             for later queries.
 
@@ -94,9 +104,10 @@ class SGLDSampler(BurnInMCMCSampler):
         """
 
         super().__init__(
-            params=params, cost_fun=cost_fun, batch_generator=batch_generator,
-            burn_in_steps=burn_in_steps, seed=seed,
-            session=session, dtype=dtype
+            params=params, cost_fun=cost_fun, burn_in_steps=burn_in_steps,
+            batch_generator=batch_generator,
+            seed=seed, dtype=dtype, session=session,
+            stepsize_schedule=stepsize_schedule
         )
 
         n_params = len(params)

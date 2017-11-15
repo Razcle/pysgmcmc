@@ -1,12 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: iso-8859-15 -*-
 """Abstract base classes for all MCMC methods. Helps unify our sampler interface."""
-# XXX NEXT METHOD NEEDS DOKU FOR FEED_DICT
 import abc
+from typing import Any, Callable, Dict, Iterator, List, Union
+import numpy as np
 import tensorflow as tf
 
 from pysgmcmc.tensor_utils import vectorize, uninitialized_params
-from pysgmcmc.stepsize_schedules import ConstantStepsizeSchedule
+from pysgmcmc.custom_typing import TensorflowSession
+from pysgmcmc.stepsize_schedules import StepsizeSchedule, ConstantStepsizeSchedule
 
 __all__ = (
     "MCMCSampler",
@@ -20,9 +22,12 @@ class MCMCSampler(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, params, cost_fun, batch_generator=None,
-                 stepsize_schedule=ConstantStepsizeSchedule(0.01),
-                 session=tf.get_default_session(), dtype=tf.float64, seed=None):
+    def __init__(self, params: List[tf.Variable],
+                 cost_fun: Callable[[List[tf.Variable]], tf.Tensor],
+                 batch_generator: Iterator[Dict[tf.placeholder, np.ndarray]]=None,
+                 stepsize_schedule: StepsizeSchedule=ConstantStepsizeSchedule(0.01),
+                 session: TensorflowSession=tf.get_default_session(),
+                 dtype: tf.DType=tf.float64, seed: int=None) -> None:
         """
         Initialize the sampler base class. Sets up member variables and
         initializes uninitialized target parameters in the current
@@ -121,7 +126,7 @@ class MCMCSampler(object):
         # query this later to determine the next sample
         self.theta_t = [None] * len(params)
 
-    def _next_batch(self):
+    def _next_batch(self) -> Dict[tf.placeholder, np.ndarray]:
         """
         Get a dictionary mapping `tensorflow.Placeholder` onto their corresponding feedable minibatch data.
         Each dictionary can directly be fed into `tensorflow.Session`.
@@ -192,11 +197,11 @@ class MCMCSampler(object):
         return dict()
 
     # XXX: Doku
-    def _next_stepsize(self):
+    def _next_stepsize(self) -> Dict[tf.Variable, float]:
         epsilon = next(self.stepsize_schedule)
         return {self.epsilon: epsilon}
 
-    def _draw_noise_sample(self, sigma, shape):
+    def _draw_noise_sample(self, sigma: tf.Tensor, shape: tf.Shape) -> tf.Tensor:
         """
         Generate a single random normal sample with shape `shape` and standard deviation `sigma`.
 
@@ -255,7 +260,7 @@ class MCMCSampler(object):
         """
         return self
 
-    def __next__(self, feed_dict=None):
+    def __next__(self, feed_dict: Dict[Any, Union[tf.Variable, tf.placeholder]]=None):
         """
         Compute and return the next sample and next cost values for this sampler.
 
@@ -319,10 +324,13 @@ class BurnInMCMCSampler(MCMCSampler):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, params, cost_fun, batch_generator=None,
-                 stepsize_schedule=ConstantStepsizeSchedule(0.01),
-                 burn_in_steps=3000,
-                 session=tf.get_default_session(), dtype=tf.float64, seed=None):
+    def __init__(self, params: List[tf.Variable],
+                 cost_fun: Callable[[List[tf.Variable]], tf.Tensor],
+                 batch_generator: Iterator[Dict[tf.placeholder, np.ndarray]]=None,
+                 stepsize_schedule: StepsizeSchedule=ConstantStepsizeSchedule(0.01),
+                 burn_in_steps: int=3000,
+                 session: TensorflowSession=tf.get_default_session(),
+                 dtype: tf.DType=tf.float64, seed: int=None) -> None:
         """
         Initializes the corresponding MCMCSampler super object and
         sets member variables.

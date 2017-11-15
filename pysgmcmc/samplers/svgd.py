@@ -1,6 +1,10 @@
+from typing import Callable, Dict, List, Iterator, Tuple
+
 import tensorflow as tf
+import numpy as np
 from pysgmcmc.tensor_utils import pdist, squareform, median
-from pysgmcmc.stepsize_schedules import ConstantStepsizeSchedule
+from pysgmcmc.custom_typing import TensorflowSession
+from pysgmcmc.stepsize_schedules import StepsizeSchedule, ConstantStepsizeSchedule
 from pysgmcmc.samplers.base_classes import MCMCSampler
 
 
@@ -20,10 +24,13 @@ class SVGDSampler(MCMCSampler):
             `Stein Variational Gradient Descent: A General Purpose Bayesian Inference Algorithm. <https://arxiv.org/pdf/1608.04471>`_
 
     """
-    def __init__(self, particles, cost_fun, batch_generator=None,
-                 stepsize_schedule=ConstantStepsizeSchedule(0.1),
-                 alpha=0.9, fudge_factor=1e-6, session=tf.get_default_session(),
-                 dtype=tf.float64, seed=None):
+    def __init__(self, particles: List[tf.Variable],
+                 cost_fun: Callable[[List[tf.Variable]], tf.Tensor],
+                 batch_generator: Iterator[Dict[tf.placeholder, np.ndarray]]=None,
+                 stepsize_schedule: StepsizeSchedule=ConstantStepsizeSchedule(0.1),
+                 alpha: float=0.9, fudge_factor: float=1e-6,
+                 session: TensorflowSession=tf.get_default_session(),
+                 dtype: tf.DType=tf.float64, seed: int=None) -> None:
         """ Initialize the sampler parameters and set up a tensorflow.Graph
             for later queries.
 
@@ -143,7 +150,7 @@ class SVGDSampler(MCMCSampler):
                 self.epsilon * adj_grad[i]
             )
 
-    def svgd_kernel(self, particles):
+    def svgd_kernel(self, particles: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """ Calculate a kernel matrix with corresponding derivatives
             for the given `particles`.
             TODO: DOKU ON KERNEL TRICK
@@ -178,18 +185,3 @@ class SVGDSampler(MCMCSampler):
         )
 
         return kernel_matrix, kernel_gradients / (h ** 2)
-
-    # XXX: Probably unnecessary. Changes should happen toplevel.
-    # However using this to test *just* the svgd implementation and make
-    # it conform to list of lists interface still seems reasonable.
-    # Later: make BNN use multiple get_net calls to get variables
-    # and extract appropriate groups from tf.trainable_variables
-    # (use scope prefix)
-    def _duplicate_variables(self, variables, duplicate_index):
-        duplicate = []
-        for var in variables:
-            name = var.name.split(":")[0] + "_" + str(duplicate_index)
-            dup_var = tf.get_variable(name, initializer=var.initializer._inputs[1])
-            # session.run(tf.variables_initializer([dup_var]))
-            duplicate.append(dup_var)
-        return duplicate

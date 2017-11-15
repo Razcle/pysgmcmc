@@ -1,12 +1,18 @@
 # vim: foldmethod=marker
+from typing import Callable, Dict, List, Iterator
+
 import tensorflow as tf
+import numpy as np
 from pysgmcmc.samplers.base_classes import BurnInMCMCSampler
 
 from pysgmcmc.tensor_utils import (
     vectorize, unvectorize, safe_divide, safe_sqrt,
 )
+from pysgmcmc.custom_typing import TensorflowSession
 
-from pysgmcmc.stepsize_schedules import ConstantStepsizeSchedule
+from pysgmcmc.stepsize_schedules import (
+    StepsizeSchedule, ConstantStepsizeSchedule
+)
 
 
 class SGHMCSampler(BurnInMCMCSampler):
@@ -28,10 +34,14 @@ class SGHMCSampler(BurnInMCMCSampler):
             `Stochastic Gradient Hamiltonian Monte Carlo <https://arxiv.org/pdf/1402.4102.pdf>`_
     """
 
-    def __init__(self, params, cost_fun, batch_generator=None,
-                 stepsize_schedule=ConstantStepsizeSchedule(0.01),
-                 burn_in_steps=3000, mdecay=0.05, scale_grad=1.0,
-                 session=tf.get_default_session(), dtype=tf.float64, seed=None):
+    def __init__(self, params: List[tf.Variable],
+                 cost_fun: Callable[[List[tf.Variable]], tf.Tensor],
+                 batch_generator: Iterator[Dict[tf.placeholder, np.ndarray]]=None,
+                 stepsize_schedule: StepsizeSchedule=ConstantStepsizeSchedule(0.01),
+                 burn_in_steps: int=3000, mdecay: float=0.05,
+                 scale_grad: float=1.0,
+                 session: TensorflowSession=tf.get_default_session(),
+                 dtype: tf.DType=tf.float64, seed: int=None) -> None:
         """ Initialize the sampler parameters and set up a tensorflow.Graph
             for later queries.
 
