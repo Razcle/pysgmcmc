@@ -11,8 +11,12 @@ __all__ = (
     "vectorize", "unvectorize", "median",
     "safe_divide", "safe_sqrt",
     "pdist", "squareform",
-    "uninitialized_params",
+    "uninitialized_params", "choice", "indicator"
 )
+
+
+def indicator(pred):
+    return tf.cast(pred, tf.int32)
 
 
 def choice(tensor: tf.Tensor, seed: int=None):
