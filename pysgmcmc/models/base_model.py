@@ -1,4 +1,5 @@
 import abc
+from typing import Any, Dict, List, Tuple, Union
 import numpy as np
 
 
@@ -13,7 +14,7 @@ class BaseModel(object):
         self.y = None
 
     @abc.abstractmethod
-    def train(self, X, y):
+    def train(self, X: np.ndarray, y: np.ndarray):
         """
         Trains the model on the provided data.
 
@@ -27,7 +28,7 @@ class BaseModel(object):
         """
         pass
 
-    def update(self, X, y):
+    def update(self, X: np.ndarray, y: np.ndarray):
         """
         Update the model with the new additional data. Override this function if your
         model allows to do something smarter than simple retraining
@@ -45,7 +46,7 @@ class BaseModel(object):
         self.train(X, y)
 
     @abc.abstractmethod
-    def predict(self, X_test):
+    def predict(self, X_test: np.ndarray):
         """
         Predicts for a given set of test data points the mean and variance of its target values
 
@@ -63,7 +64,7 @@ class BaseModel(object):
         """
         pass
 
-    def _check_shapes_train(func: callable):
+    def _check_shapes_train(func):
         def func_wrapper(self, X, y, *args, **kwargs):
             assert X.shape[0] == y.shape[0]
             assert len(X.shape) == 2
@@ -71,14 +72,14 @@ class BaseModel(object):
             return func(self, X, y, *args, **kwargs)
         return func_wrapper
 
-    def _check_shapes_predict(func: callable):
+    def _check_shapes_predict(func):
         def func_wrapper(self, X, *args, **kwargs):
             assert len(X.shape) == 2
             return func(self, X, *args, **kwargs)
 
         return func_wrapper
 
-    def get_json_data(self):
+    def get_json_data(self) -> Dict[str, Union[str, None, List[Any]]]:
         """
         Json getter function'
 
@@ -91,7 +92,7 @@ class BaseModel(object):
                      'hyperparameters': ""}
         return json_data
 
-    def get_incumbent(self):
+    def get_incumbent(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         Returns the best observed point and its function value
 
@@ -106,7 +107,7 @@ class BaseModel(object):
         return self.X[best_idx], self.y[best_idx]
 
 
-def zero_one_normalization(X, lower=None, upper=None):
+def zero_one_normalization(X: np.ndarray, lower=None, upper=None):
 
     if lower is None:
         lower = np.min(X, axis=0)
@@ -118,11 +119,11 @@ def zero_one_normalization(X, lower=None, upper=None):
     return X_normalized, lower, upper
 
 
-def zero_one_unnormalization(X_normalized, lower, upper):
+def zero_one_unnormalization(X_normalized: np.ndarray, lower, upper):
     return lower + (upper - lower) * X_normalized
 
 
-def zero_mean_unit_var_normalization(X, mean=None, std=None):
+def zero_mean_unit_var_normalization(X: np.ndarray, mean=None, std=None):
     if mean is None:
         mean = np.mean(X, axis=0)
     if std is None:
@@ -133,5 +134,5 @@ def zero_mean_unit_var_normalization(X, mean=None, std=None):
     return X_normalized, mean, std
 
 
-def zero_mean_unit_var_unnormalization(X_normalized, mean, std):
+def zero_mean_unit_var_unnormalization(X_normalized: np.ndarray, mean, std):
     return X_normalized * std + mean

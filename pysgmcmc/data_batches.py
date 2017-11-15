@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 import logging
 
 __all__ = (
@@ -7,7 +8,10 @@ __all__ = (
 )
 
 
-def generate_batches(x, y, x_placeholder, y_placeholder, batch_size=20, seed=None):
+def generate_batches(x: np.ndarray, y: np.ndarray,
+                     x_placeholder: tf.placeholder,
+                     y_placeholder: tf.placeholder,
+                     batch_size: int=20, seed: int=None):
     """ Infinite generator of random minibatches for a dataset.
 
         For general reference on (infinite) generators, see:
@@ -129,8 +133,10 @@ def generate_batches(x, y, x_placeholder, y_placeholder, batch_size=20, seed=Non
         yield feed_dict
 
 
-def generate_shuffled_batches(x, y, x_placeholder, y_placeholder,
-                              batch_size=20, seed=None):
+def generate_shuffled_batches(x: np.ndarray, y: np.ndarray,
+                              x_placeholder: tf.placeholder,
+                              y_placeholder: tf.placeholder,
+                              batch_size: int=20, seed: int=None):
 
     """ Infinite generator of shuffled random minibatches for a dataset.
 

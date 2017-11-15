@@ -1,11 +1,12 @@
 from abc import ABCMeta, abstractmethod
+from typing import Union
 
 
 class StepsizeSchedule(object):
     """ Generic base class for all stepsize schedules. """
     __metaclass__ = ABCMeta
 
-    def __init__(self, initial_value):
+    def __init__(self, initial_value: Union[int, float]) -> None:
         self.initial_value = initial_value
 
     @abstractmethod
@@ -37,7 +38,7 @@ class StepsizeSchedule(object):
 class ConstantStepsizeSchedule(StepsizeSchedule):
     """ Trivial schedule that keeps the stepsize at a constant value.  """
 
-    def __next__(self):
+    def __next__(self) -> Union[int, float]:
         """
         Calling `next(schedule)` on a constant stepsize schedule
         will always return the schedules initial value.
@@ -63,7 +64,7 @@ class ConstantStepsizeSchedule(StepsizeSchedule):
         """
         return self.initial_value
 
-    def __str__(self):
+    def __str__(self) -> str:
         """ Pretty string representation of `ConstantStepsizeSchedule`.
 
         Returns

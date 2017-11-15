@@ -5,6 +5,8 @@ from collections import deque
 import itertools
 import logging
 from time import time
+from typing import Callable, Dict, Iterator, List, Union
+
 import numpy as np
 import tensorflow as tf
 
@@ -14,8 +16,9 @@ from pysgmcmc.models.base_model import (
     zero_mean_unit_var_unnormalization
 )
 
+from pysgmcmc.custom_typing import TensorflowSession
 from pysgmcmc.sampling import Sampler
-from pysgmcmc.stepsize_schedules import ConstantStepsizeSchedule
+from pysgmcmc.stepsize_schedules import StepsizeSchedule, ConstantStepsizeSchedule
 
 from pysgmcmc.data_batches import generate_batches
 from pysgmcmc.tensor_utils import safe_divide
@@ -25,7 +28,8 @@ from pysgmcmc.tensor_utils import safe_divide
 
 #  Default Network Architecture {{{ #
 
-def get_default_net(inputs, seed=None, dtype=tf.float64):
+def get_default_net(inputs: tf.placeholder, seed: int=None,
+                    dtype: tf.DType=tf.float64):
     from tensorflow.contrib.layers import variance_scaling_initializer as HeNormal
     fc_layer_1 = tf.layers.dense(
         inputs, units=50, activation=tf.tanh,
@@ -74,7 +78,9 @@ def get_default_net(inputs, seed=None, dtype=tf.float64):
 #  Priors {{{ #
 
 
-def log_variance_prior_log_like(log_var, mean=1e-6, var=0.01, dtype=tf.float64):
+def log_variance_prior_log_like(log_var: Union[tf.Tensor, tf.Variable],
+                                mean: float=1e-6, var: float=0.01,
+                                dtype: tf.DType=tf.float64):
     """
     Prior on the log predicted variance.
 
@@ -107,7 +113,8 @@ def log_variance_prior_log_like(log_var, mean=1e-6, var=0.01, dtype=tf.float64):
         tf.log(var), axis=1), name="variance_prior_log_like")
 
 
-def weight_prior_log_like(parameters, wdecay=1., dtype=tf.float64):
+def weight_prior_log_like(parameters: List[tf.Variable], wdecay: float =1.,
+                          dtype: tf.DType=tf.float64):
     """
     Prior on the weights.
 
@@ -145,15 +152,17 @@ def weight_prior_log_like(parameters, wdecay=1., dtype=tf.float64):
 
 
 class BayesianNeuralNetwork(object):
-    def __init__(self, session, sampling_method=Sampler.SGHMC,
-                 get_net=get_default_net,
-                 batch_generator=generate_batches,
-                 batch_size=20,
-                 stepsize_schedule=ConstantStepsizeSchedule(np.sqrt(1e-4)),
-                 n_nets=100, n_iters=50000,
-                 burn_in_steps=1000, sample_steps=100,
-                 normalize_input=True, normalize_output=True,
-                 seed=None, dtype=tf.float64, **sampler_kwargs):
+    def __init__(self, session: TensorflowSession,
+                 sampling_method: Sampler=Sampler.SGHMC,
+                 get_net: Callable[..., tf.Tensor]=get_default_net,
+                 batch_generator: Iterator[Dict[tf.placeholder, np.ndarray]]=generate_batches,
+                 batch_size: int=20,
+                 stepsize_schedule: StepsizeSchedule=ConstantStepsizeSchedule(np.sqrt(1e-4)),
+                 n_nets: int=100, n_iters: int=50000,
+                 burn_in_steps: int=1000, sample_steps: int=100,
+                 normalize_input: bool=True, normalize_output: bool=True,
+                 seed: int=None, dtype: tf.DType=tf.float64,
+                 **sampler_kwargs) -> None:
         """
         Bayesian Neural Networks use Bayesian methods to estimate the posterior
         distribution of a neural network's weights. This allows to also
@@ -267,20 +276,20 @@ class BayesianNeuralNetwork(object):
                 "'Sampler' enum type.".format(input=sampling_method)
             )
 
-        self.sampling_method = sampling_method
+        self.sampling_method = sampling_method  # type: Sampler
 
-        self.stepsize_schedule = stepsize_schedule
+        self.stepsize_schedule = stepsize_schedule  # type: StepsizeSchedule
 
-        self.get_net = get_net
+        self.get_net = get_net  # type: Callable[..., tf.Tensor]
         self.batch_generator = batch_generator
 
-        self.normalize_input = normalize_input
-        self.normalize_output = normalize_output
+        self.normalize_input = normalize_input  # type: bool
+        self.normalize_output = normalize_output  # type: bool
 
         self.n_nets = n_nets
         self.n_iters = n_iters
 
-        self.batch_size = batch_size
+        self.batch_size = batch_size  # type: int
 
         self.sampler_kwargs = sampler_kwargs
 
@@ -289,11 +298,11 @@ class BayesianNeuralNetwork(object):
 
         self.samples = deque(maxlen=n_nets)
 
-        self.seed = seed
+        self.seed = seed  # type: int
 
-        self.dtype = dtype
+        self.dtype = dtype  # type: tf.DType
 
-        self.session = session
+        self.session = session  # type: TensorflowSession
 
         self.is_trained = False
 
@@ -334,7 +343,7 @@ class BayesianNeuralNetwork(object):
                 "burn_in_steps": self.burn_in_steps
             })
 
-    def negative_log_likelihood(self, X, Y):
+    def negative_log_likelihood(self, X: tf.placeholder, Y: tf.placeholder):
         """ Compute the negative log likelihood of the
             current network parameters with respect to inputs `X` with
             labels `Y`.
@@ -469,7 +478,7 @@ class BayesianNeuralNetwork(object):
 
         logging.info("Starting sampling")
 
-        def log_full_training_error(iteration_index, is_sampling: bool):
+        def log_full_training_error(iteration_index: int, is_sampling: bool):
             """ Compute the error of our last sampled network parameters
                 on the full training dataset and use `logging.info` to
                 log it. The boolean flag `sampling` is used to determine
@@ -532,7 +541,8 @@ class BayesianNeuralNetwork(object):
 
         self.is_trained = True
 
-    def compute_network_output(self, params, input_data):
+    def compute_network_output(self, params: List[np.ndarray],
+                               input_data: np.ndarray):
         """ Compute and return the output of the network when
             parameterized with `params` on `input_data`.
 

@@ -2,7 +2,8 @@
 This module contains util functions to facilitate working
 with `tensorflow.Tensor` objects.
 """
-
+from pysgmcmc.custom_typing import TensorflowSession
+from typing import List, Union
 import numpy as np
 import tensorflow as tf
 
@@ -32,6 +33,7 @@ def choice(tensor: tf.Tensor, seed: int=None):
 
     Examples
     ----------
+
     Simple example:
 
     >>> import tensorflow as tf
@@ -65,7 +67,7 @@ def choice(tensor: tf.Tensor, seed: int=None):
     return tensor_value[index]
 
 
-def vectorize(tensor):
+def vectorize(tensor: Union[tf.Tensor, tf.Variable]):
     """ Turn any matrix into a long vector by expanding it.
         Tranforms `[[a, b], [c, d]]` into `[a, b, c, d]`.
 
@@ -155,7 +157,7 @@ def vectorize(tensor):
         )
 
 
-def unvectorize(tensor, original_shape):
+def unvectorize(tensor: Union[tf.Tensor, tf.Variable], original_shape: tf.Shape):
     """ Reshape previously vectorized `tensor` back to its `original_shape`.
         Essentially the inverse transformation as the one performed by
         `tensor_utils.vectorize`.
@@ -374,7 +376,7 @@ def safe_sqrt(x, clip_value_min=0., clip_value_max=float("inf"), name=None):
     )
 
 
-def pdist(tensor, metric="euclidean"):
+def pdist(tensor: Union[tf.Tensor, tf.Variable], metric: str="euclidean"):
     """
     Pairwise distances between observations in n-dimensional space.
     Ported from `scipy.spatial.distance.pdist`
@@ -470,7 +472,7 @@ def pdist(tensor, metric="euclidean"):
     return metric_function(tensor)
 
 
-def squareform(tensor):
+def squareform(tensor: tf.Tensor):
     """
     Converts a vector-form distance vector to a square-form distance matrix.
     Ported from `scipy.spatial.distance.squareform`
@@ -627,7 +629,7 @@ def squareform(tensor):
         )
 
 
-def uninitialized_params(params, session):
+def uninitialized_params(params: List[tf.Tensor], session: TensorflowSession):
     """
     Return the list containing all tensorflow.Variable objects present in
     iterable `params` that are not yet initialized.

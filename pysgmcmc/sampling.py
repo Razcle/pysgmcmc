@@ -192,7 +192,7 @@ class Sampler(Enum):
                 "Please add an import in the appropriate location."
             )
 
-        from inspect import signature, _empty
+        from inspect import signature
 
         # look up all initializer parameters with their (potential)
         # default values
@@ -228,7 +228,7 @@ class Sampler(Enum):
                 )
             )
 
-        def parameter_value(parameter_name):
+        def parameter_value(parameter_name: str):
             """ Determine the value to assign to the parameter
                 with name `parameter_name`.
                 If `parameter_name` is overwritten (if it is a key in
@@ -248,10 +248,11 @@ class Sampler(Enum):
                 will be passed to the initializer of the sampler.
 
             """
+            import inspect
 
             default_value = all_sampler_parameters[parameter_name].default
 
-            if parameter_name not in sampler_args and default_value is _empty:
+            if parameter_name not in sampler_args and default_value is inspect._empty:
                 raise ValueError(
                     "sampling.Sampler.get_sampler: "
                     "{param_name} was not overwritten as sampler argument "
