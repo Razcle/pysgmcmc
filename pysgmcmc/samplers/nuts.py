@@ -33,8 +33,6 @@ class NUTSSampler(MCMCSampler):
                  alpha, n_alpha) = self.build_tree(
                     theta_plus, r_plus, u, v_j, j, epsilon * theta, r_0
                 )
-             with probability(...):
-                 theta <- theta_prime
 
     def _costs_for(self, param_values):
         assignments = []
