@@ -63,11 +63,11 @@ def gaussian_mixture_model_log_likelihood(x, mu=(-5, 0, 5), var=(1., 1., 1.),
                                           weights=(1. / 3., 1. / 3., 1. / 3.)):
     assert len(mu) == len(var) == len(weights)
 
-    if hasattr(x, "__iter__"):
+    if hasattr(x, "__iter__") and not isinstance(x, tf.Tensor):
         assert(len(x) == 1)
         x = x[0]
 
-    if isinstance(x, tf.Variable):
+    if isinstance(x, (tf.Tensor, tf.Variable)):
         def normldf_tf(x, mu, var):
             pi = tf.constant(np.pi)
             return -0.5 * tf.log(2.0 * pi * var) - 0.5 * ((x - mu) ** 2) / var
