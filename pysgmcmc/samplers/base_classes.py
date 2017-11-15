@@ -201,7 +201,7 @@ class MCMCSampler(object):
         epsilon = next(self.stepsize_schedule)
         return {self.epsilon: epsilon}
 
-    def _draw_noise_sample(self, sigma: tf.Tensor, shape: tf.Shape) -> tf.Tensor:
+    def _draw_noise_sample(self, sigma: tf.Tensor, shape: tf.shape) -> tf.Tensor:
         """
         Generate a single random normal sample with shape `shape` and standard deviation `sigma`.
 

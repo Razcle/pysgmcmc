@@ -157,7 +157,7 @@ def vectorize(tensor: Union[tf.Tensor, tf.Variable]):
         )
 
 
-def unvectorize(tensor: Union[tf.Tensor, tf.Variable], original_shape: tf.Shape):
+def unvectorize(tensor: Union[tf.Tensor, tf.Variable], original_shape: tf.shape):
     """ Reshape previously vectorized `tensor` back to its `original_shape`.
         Essentially the inverse transformation as the one performed by
         `tensor_utils.vectorize`.
@@ -167,7 +167,7 @@ def unvectorize(tensor: Union[tf.Tensor, tf.Variable], original_shape: tf.Shape)
     tensor : tensorflow.Variable object or tensorflow.Tensor object
         Input tensor to unvectorize.
 
-    original_shape : tensorflow.Shape
+    original_shape : tensorflow.shape
         Original shape of `tensor` prior to its vectorization.
 
     Returns
