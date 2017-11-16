@@ -46,7 +46,6 @@ class NUTSSampler(MCMCSampler):
 
         def loop_body(s, n, j, theta_last, theta_minus, r_minus,
                       theta_plus, r_plus, r_0, u):
-            print("BODY")
             v_j = choice((-1, 1))
 
             (theta_minus_tree, r_minus_tree,
@@ -55,11 +54,11 @@ class NUTSSampler(MCMCSampler):
                 pred=tf.equal(v_j, tf.constant(-1, dtype=v_j.dtype, name="pred_vj_const")),
                 true_fn=lambda: self.build_tree(
                     theta_minus, r_minus,
-                    u, v_j, j, epsilon, theta_last, r_0
+                    u, v_j, j - 1, epsilon, theta_last, r_0
                 ),
                 false_fn=lambda: self.build_tree(
                     theta_plus, r_plus,
-                    u, v_j, j, epsilon, theta_last, r_0
+                    u, v_j, j - 1, epsilon, theta_last, r_0
                 )
             )
 
@@ -97,6 +96,7 @@ class NUTSSampler(MCMCSampler):
                         tf.greater_equal((theta_plus - theta_minus) * r_plus, 0)
                     )
                 )
+                print("RETURNING THINGS")
 
                 return (
                     s_new, n + n_prime, j + 1,
@@ -106,12 +106,12 @@ class NUTSSampler(MCMCSampler):
                     r_0, u
                 )
 
-        a, *_ = tf.while_loop(
+        results = tf.while_loop(
             cond=lambda s, *_: tf.equal(s, tf.constant(1, dtype=s.dtype)),
             body=loop_body,
             loop_vars=[s, n, j, params, params, r_0, params, r_0, r_0, u]
         )
-        session.run(a)
+        session.run(results)
 
         # XXX: Mass adaptation to estimate epsilon
 
@@ -128,9 +128,11 @@ class NUTSSampler(MCMCSampler):
         return theta_bar, r_bar
 
     def build_tree(self, theta, r, u, v, j, epsilon, theta_0, r_0):
+        print("BUILDING TREE")
         costs_theta_0 = self.cost_fun(theta_0)
 
         def base_case(theta, r, v, epsilon, u, r_0, costs_theta_0):
+            print("BASE CASE")
             theta_prime, r_prime = self.leapfrog(theta=theta, r=r, epsilon=tf.cast(v, dtype=epsilon.dtype) * epsilon)
 
             costs_theta_prime = self.cost_fun(theta_prime)
@@ -162,6 +164,7 @@ class NUTSSampler(MCMCSampler):
             )
 
         def recursion(theta, r, u, v, j, epsilon, theta_0, r_0):
+            theta = tf.Print(theta, [theta], message="THETA")
             (theta_minus, r_minus, theta_plus, r_plus,
              theta_prime, n_prime, s_prime,
              alpha_prime, n_alpha_prime) = self.build_tree(
@@ -172,6 +175,7 @@ class NUTSSampler(MCMCSampler):
                                         theta_plus, r_plus,
                                         u, v, j, epsilon, theta_0, r_0,
                                         alpha_prime, n_alpha_prime, n_prime):
+                theta_minus = tf.Print(theta_minus, [theta_minus], message="THETAMINUS")
                 (theta_minus_tree, r_minus_tree,
                  theta_plus_tree, r_plus_tree,
                  theta_prime_prime, n_prime_prime,
@@ -187,6 +191,7 @@ class NUTSSampler(MCMCSampler):
                         epsilon, theta_0, r_0
                     )
                 )
+
 
                 theta_minus, r_minus = tf.cond(
                     pred=tf.equal(v, tf.constant(-1., dtype=v.dtype, name="pred2_v_const")),
@@ -223,7 +228,6 @@ class NUTSSampler(MCMCSampler):
                             tf.constant(0., dtype=theta_plus.dtype, name="gteq_const_1"))
                     )
                 )
-
                 return (
                     theta_minus, r_minus, theta_plus, r_plus,
                     theta_prime, n_prime, s_prime,
